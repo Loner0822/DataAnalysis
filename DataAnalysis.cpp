@@ -87,64 +87,8 @@ bool Check_Is_Hex(std::string str) {
     return true;
 }
 
-// 按XML中FormatDesc建map
-void Build_XML_FormatDesc_Map(std::map<std::string, std::string> &res_map, tinyxml2::XMLElement *root) {
-    std::string ID, Condition;
-    tinyxml2::XMLElement* surface = root->FirstChildElement("FormatDesc"), *item;
-    for (item = surface->FirstChildElement(); item != NULL; item = item->NextSiblingElement()) {
-        ID = item->FindAttribute("id")->Value();
-        Condition = item->FindAttribute("condition")->Value();
-        Condition = Condition.substr(Condition.length() - 3, 2);
-        if (Check_Is_Hex(Condition) && res_map.count(Condition) == 0) {
-            res_map[Condition] = ID;
-        }
-    }
-}
-
-// 按XML中Format建map
-void Build_XML_Format_Map(std::map<std::string, std::vector<std::pair<int, std::string>>> &res_map, tinyxml2::XMLElement* root) {
-    tinyxml2::XMLElement* surface = root->FirstChildElement("FormatDesc"), *item, *tmp;
-    std::string Elem_Name, Elem_ID;
-    std::string ParaIndex, VirtualBand;
-    std::vector<std::pair<int, std::string>> vec;
-    for (item = surface->NextSiblingElement(); item != NULL; item = item->NextSiblingElement()) {
-        vec.clear();
-        Elem_Name = item->Name();
-        if (Elem_Name != "Format")
-            break;
-        Elem_ID = item->FindAttribute("ID")->Value();
-        for (tmp = item->FirstChildElement(); tmp != NULL; tmp = tmp->NextSiblingElement()) {
-            ParaIndex = tmp->FindAttribute("paraIndex")->Value();
-            VirtualBand = tmp->FindAttribute("virtualBand")->Value();
-            vec.push_back(std::make_pair(std::stoi(ParaIndex), VirtualBand));
-        }
-        res_map[Elem_ID] = vec;
-    }
-}
-
-// 按XML中Calculate建map
-void Build_XML_Para_Calc_Map(std::map<std::string, std::vector<CalcUnit>>& res_map, tinyxml2::XMLElement* root) {
-    tinyxml2::XMLElement* surface = root->FirstChildElement("FormatDesc"), * item, * tmp;
-    std::string Elem_Name, Elem_ID;
-    std::string ParaIndex, VirtualBand;
-    std::vector<std::pair<int, std::string>> vec;
-    for (item = surface->NextSiblingElement(); item != NULL; item = item->NextSiblingElement()) {
-        vec.clear();
-        Elem_Name = item->Name();
-        if (Elem_Name != "Format")
-            break;
-        Elem_ID = item->FindAttribute("ID")->Value();
-        for (tmp = item->FirstChildElement(); tmp != NULL; tmp = tmp->NextSiblingElement()) {
-            ParaIndex = tmp->FindAttribute("paraIndex")->Value();
-            VirtualBand = tmp->FindAttribute("virtualBand")->Value();
-            vec.push_back(std::make_pair(std::stoi(ParaIndex), VirtualBand));
-        }
-        res_map[Elem_ID] = vec;
-    }
-}
-
 // VirtualBand转换为数据串
-std::string VirtualBand_To_DataString(std::string virtual_band, const Package &pkg) {
+std::string VirtualBand_To_DataString(std::string virtual_band, const Package& pkg) {
     std::vector<int> res;
     res.clear();
     int tmp, num1, num2;
@@ -224,7 +168,7 @@ std::vector<std::string> My_Split(const std::string& s, const std::string& seper
 }
 
 // 按csv文件建立Para_Method Map
-void Build_Para_Method_Map(std::map<std::string, std::string> &res_map, std::string &str) {
+void Build_Para_Method_Map(std::map<std::string, std::string>& res_map, std::string& str) {
     std::string::iterator it;
     for (it = str.begin(); it < str.end(); ++it) {
         if (*it == '\n') {
@@ -247,6 +191,80 @@ void Build_Para_Method_Map(std::map<std::string, std::string> &res_map, std::str
     std::vector<std::string> para_index_method = My_Split(str, "\"");
     for (int i = 0; i < para_index_method.size() / 2; ++i) {
         res_map[para_index_method[i * 2]] = para_index_method[i * 2 + 1];
+    }
+}
+
+// 常数字符串转换成数组 
+std::vector<double> Const_Str_To_Vector(std::string str) {
+    std::vector<double> res;
+    std::vector<std::string> res_str;
+    res_str = My_Split(str, ",");
+    double tmp;
+    for (int i = 0; i < res_str.size(); ++i) {
+        tmp = atof(res_str[i].c_str());
+        res.push_back(tmp);
+    }
+    return res;
+}
+
+// 按XML中FormatDesc建map
+void Build_XML_FormatDesc_Map(std::map<std::string, std::string> &res_map, tinyxml2::XMLElement *root) {
+    std::string ID, Condition;
+    tinyxml2::XMLElement* surface = root->FirstChildElement("FormatDesc"), *item;
+    for (item = surface->FirstChildElement(); item != NULL; item = item->NextSiblingElement()) {
+        ID = item->FindAttribute("id")->Value();
+        Condition = item->FindAttribute("condition")->Value();
+        Condition = Condition.substr(Condition.length() - 3, 2);
+        if (Check_Is_Hex(Condition) && res_map.count(Condition) == 0) {
+            res_map[Condition] = ID;
+        }
+    }
+}
+
+// 按XML中Format建map
+void Build_XML_Format_Map(std::map<std::string, std::vector<std::pair<int, std::string>>> &res_map, tinyxml2::XMLElement* root) {
+    tinyxml2::XMLElement* surface = root->FirstChildElement("FormatDesc"), *item, *tmp;
+    std::string Elem_Name, Elem_ID;
+    std::string ParaIndex, VirtualBand;
+    std::vector<std::pair<int, std::string>> vec;
+    for (item = surface->NextSiblingElement(); item != NULL; item = item->NextSiblingElement()) {
+        vec.clear();
+        Elem_Name = item->Name();
+        if (Elem_Name != "Format")
+            break;
+        Elem_ID = item->FindAttribute("ID")->Value();
+        for (tmp = item->FirstChildElement(); tmp != NULL; tmp = tmp->NextSiblingElement()) {
+            ParaIndex = tmp->FindAttribute("paraIndex")->Value();
+            VirtualBand = tmp->FindAttribute("virtualBand")->Value();
+            vec.push_back(std::make_pair(std::stoi(ParaIndex), VirtualBand));
+        }
+        res_map[Elem_ID] = vec;
+    }
+}
+
+// 按XML中Calculate建map
+void Build_XML_Para_Calc_Map(std::map<std::string, std::vector<CalcUnit>>& res_map, tinyxml2::XMLElement* root) {
+    tinyxml2::XMLElement* surface = root->FirstChildElement("Calculate"), *item, *tmp;
+    std::string para_index;
+    CalcUnit elem;
+    std::vector<int> check_num;
+    std::vector<CalcUnit> vec;
+    for (item = surface->FirstChildElement(); item != NULL; item = item->NextSiblingElement()) {
+        vec.clear();
+        para_index = item->Attribute("paraIndex");
+        for (tmp = item->FirstChildElement(); tmp != NULL; tmp = tmp->NextSiblingElement()) {
+            elem.Calc_Id = std::stoi(tmp->Attribute("id"));
+            check_num.push_back(elem.Calc_Id);
+            elem.Const_str = tmp->Attribute("const");
+            elem.Const_Nums = Const_Str_To_Vector(elem.Const_str);
+            vec.push_back(elem);
+        }
+        res_map[para_index] = vec;
+    }
+    std::sort(check_num.begin(), check_num.end());
+    std::unique(check_num.begin(), check_num.end());
+    for (int i = 0; i < check_num.size(); ++i) {
+        std::cout << check_num[i] << std::endl;
     }
 }
 
@@ -319,9 +337,10 @@ int main() {
     Build_XML_Para_Calc_Map(Para_Calc_Map, root);
     
     std::string Id_Code, Format_Code;
-    std::vector<std::pair<int, std::string>> Para_Code;
+    std::vector <std::pair<int, std::string>> Para_Code;
     std::string Para_Index;
     OperatorUnit tmp_op;
+    //std::vector <CalcUnit> 
     DB_Para.Delete_Database("delete from my_out");
     for (int i = 0; i < 4/*Frame_Data.size()*/; ++i) {
         for (int j = 0; j < 3; ++j) {
@@ -334,14 +353,14 @@ int main() {
                 continue;
             for (int k = 0; k < Para_Code.size(); ++k) {
                 tmp_op = Para_Data[std::to_string(Para_Code[k].first)];
-                std::string str_sql = "insert into my_out (para_index, sys_name, para_code, para_name, para_method, virtual_band, pkg_value) values ('";
+                std::string str_sql = "insert into my_out (para_index, sys_name, para_code, para_name, para_method, virtual_band, pkg_value, pkg_result) values ('";
                 str_sql += std::to_string(Para_Code[k].first) + "', '";
                 str_sql += tmp_op.Sys_Name + "', '";
                 str_sql += tmp_op.Para_Code + "', '";
                 str_sql += tmp_op.Para_Name + "', '";
                 str_sql += tmp_op.Para_Method + "', '";
                 str_sql += Para_Code[k].second + "', '";
-                str_sql += VirtualBand_To_DataString(Para_Code[k].second, now) + "')";
+                str_sql += VirtualBand_To_DataString(Para_Code[k].second, now) + "', '";
                 DB_Para.Insert_Database(str_sql);
             }
         }

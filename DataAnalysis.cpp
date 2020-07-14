@@ -14,6 +14,7 @@
 #pragma comment(lib,"libmysql.lib")
 
 const int MaxByte = 0xff;
+double CONST_5V_VOLT;
 
 // 读取2进制文件(压缩成字符类型)
 void Get_Byte_From_File(std::string &res) {
@@ -85,47 +86,6 @@ bool Check_Is_Hex(std::string str) {
             return false;
     }
     return true;
-}
-
-// VirtualBand转换为数据串
-std::string VirtualBand_To_DataString(std::string virtual_band, const Package& pkg) {
-    std::vector<int> res;
-    res.clear();
-    int tmp, num1, num2;
-    if (virtual_band.find('-') != virtual_band.npos) {
-        tmp = num1 = num2 = 0;
-        while ('0' <= virtual_band[tmp] && virtual_band[tmp] <= '9')
-            num1 = num1 * 10 + virtual_band[tmp] - '0', ++tmp;
-        while (virtual_band[tmp] < '0' || virtual_band[tmp] > '9')
-            ++tmp;
-        while ('0' <= virtual_band[tmp] && virtual_band[tmp] <= '9')
-            num2 = num2 * 10 + virtual_band[tmp] - '0', ++tmp;
-        for (int i = num1; i <= num2; ++i)
-            res.push_back(i);
-    }
-    else if (virtual_band.find(',') != virtual_band.npos) {
-        tmp = num1 = num2 = 0;
-        while ('0' <= virtual_band[tmp] && virtual_band[tmp] <= '9')
-            num1 = num1 * 10 + virtual_band[tmp] - '0', ++tmp;
-        while (virtual_band[tmp] < '0' || virtual_band[tmp] > '9')
-            ++tmp;
-        while ('0' <= virtual_band[tmp] && virtual_band[tmp] <= '9')
-            num2 = num2 * 10 + virtual_band[tmp] - '0', ++tmp;
-        res.push_back(num1);
-        res.push_back(num2);
-    }
-    else {
-        tmp = num1 = 0;
-        while ('0' <= virtual_band[tmp] && virtual_band[tmp] <= '9')
-            num1 = num1 * 10 + virtual_band[tmp] - '0', ++tmp;
-        res.push_back(num1);
-    }
-    std::string pkg_data, res_str;
-    pkg_data = pkg.Package_Leader + pkg.Package_Sub_Leader + pkg.Package_Data;
-    for (int i = 0; i < res.size(); ++i) {
-        res_str += pkg_data.substr((res[i] - 1) * 2, 2);
-    }
-    return res_str;
 }
 
 // 字符串分割
@@ -261,11 +221,58 @@ void Build_XML_Para_Calc_Map(std::map<std::string, std::vector<CalcUnit>>& res_m
         }
         res_map[para_index] = vec;
     }
-    std::sort(check_num.begin(), check_num.end());
-    std::unique(check_num.begin(), check_num.end());
-    for (int i = 0; i < check_num.size(); ++i) {
-        std::cout << check_num[i] << std::endl;
+}
+
+// VirtualBand转换为数据串
+std::string VirtualBand_To_DataString(std::string virtual_band, const Package& pkg) {
+    std::vector<int> res;
+    res.clear();
+    int tmp, num1, num2;
+    if (virtual_band.find('-') != virtual_band.npos) {
+        tmp = num1 = num2 = 0;
+        while ('0' <= virtual_band[tmp] && virtual_band[tmp] <= '9')
+            num1 = num1 * 10 + virtual_band[tmp] - '0', ++tmp;
+        while (virtual_band[tmp] < '0' || virtual_band[tmp] > '9')
+            ++tmp;
+        while ('0' <= virtual_band[tmp] && virtual_band[tmp] <= '9')
+            num2 = num2 * 10 + virtual_band[tmp] - '0', ++tmp;
+        for (int i = num1; i <= num2; ++i)
+            res.push_back(i);
     }
+    else if (virtual_band.find(',') != virtual_band.npos) {
+        tmp = num1 = num2 = 0;
+        while ('0' <= virtual_band[tmp] && virtual_band[tmp] <= '9')
+            num1 = num1 * 10 + virtual_band[tmp] - '0', ++tmp;
+        while (virtual_band[tmp] < '0' || virtual_band[tmp] > '9')
+            ++tmp;
+        while ('0' <= virtual_band[tmp] && virtual_band[tmp] <= '9')
+            num2 = num2 * 10 + virtual_band[tmp] - '0', ++tmp;
+        res.push_back(num1);
+        res.push_back(num2);
+    }
+    else {
+        tmp = num1 = 0;
+        while ('0' <= virtual_band[tmp] && virtual_band[tmp] <= '9')
+            num1 = num1 * 10 + virtual_band[tmp] - '0', ++tmp;
+        res.push_back(num1);
+    }
+    std::string pkg_data, res_str;
+    pkg_data = pkg.Package_Leader + pkg.Package_Sub_Leader + pkg.Package_Data;
+    for (int i = 0; i < res.size(); ++i) {
+        res_str += pkg_data.substr((res[i] - 1) * 2, 2);
+    }
+    return res_str;
+}
+
+std::string Calculate_To_DataString(const std::string &input, std::vector<CalcUnit> &calc_list) {
+    double res = std::stoi(input, nullptr, 16);
+    for (int i = 0; i < calc_list.size(); ++i) {
+        if (calc_list[i].Calc_Id == 50 || calc_list[i].Calc_Id == 51) {
+            calc_list[i].Const_Nums.push_back(CONST_5V_VOLT);
+        }
+        res = calc_list[i].Calculate_Result(res);
+    }
+    return std::to_string(res);
 }
 
 int main() {
@@ -316,17 +323,11 @@ int main() {
         return 0;
     }
 
-    // 按帧存储的数据包
-    std::vector<Frame> Frame_Data;
-    Frame_Data.clear();
-    Save_Data_By_Frame(Frame_Data, File_String);
-    File_String.clear();
-
     // 读取&存储XML解析文件
     tinyxml2::XMLDocument TelProcess;
     TelProcess.LoadFile("TelemetryProcess.xml");
     tinyxml2::XMLElement* root = TelProcess.RootElement();
-    
+
     std::map<std::string, std::string> FormatDesc_Map;
     Build_XML_FormatDesc_Map(FormatDesc_Map, root);
 
@@ -335,7 +336,13 @@ int main() {
 
     std::map<std::string, std::vector<CalcUnit>> Para_Calc_Map;
     Build_XML_Para_Calc_Map(Para_Calc_Map, root);
-    
+
+    // 按帧存储的数据包
+    std::vector<Frame> Frame_Data;
+    Frame_Data.clear();
+    Save_Data_By_Frame(Frame_Data, File_String);
+    File_String.clear();
+
     std::string Id_Code, Format_Code;
     std::vector <std::pair<int, std::string>> Para_Code;
     std::string Para_Index;
@@ -352,16 +359,23 @@ int main() {
             else
                 continue;
             for (int k = 0; k < Para_Code.size(); ++k) {
-                tmp_op = Para_Data[std::to_string(Para_Code[k].first)];
+                std::string para_idx = std::to_string(Para_Code[k].first);
+                tmp_op = Para_Data[para_idx];
                 std::string str_sql = "insert into my_out (para_index, sys_name, para_code, para_name, para_method, virtual_band, pkg_value, pkg_result) values ('";
-                str_sql += std::to_string(Para_Code[k].first) + "', '";
+                str_sql += para_idx + "', '";
                 str_sql += tmp_op.Sys_Name + "', '";
                 str_sql += tmp_op.Para_Code + "', '";
                 str_sql += tmp_op.Para_Name + "', '";
                 str_sql += tmp_op.Para_Method + "', '";
                 str_sql += Para_Code[k].second + "', '";
-                str_sql += VirtualBand_To_DataString(Para_Code[k].second, now) + "', '";
+                std::string vir_band = VirtualBand_To_DataString(Para_Code[k].second, now);
+                str_sql += vir_band + "', '";
+                std::string pkg_res = Calculate_To_DataString(vir_band, Para_Calc_Map[para_idx]);
+                str_sql += pkg_res + "');";
                 DB_Para.Insert_Database(str_sql);
+                if (para_idx == "1101") {
+                    CONST_5V_VOLT = std::stof(pkg_res);
+                }
             }
         }
     }

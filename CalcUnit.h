@@ -1,5 +1,7 @@
 #include <string>
 #include <vector>
+#include <cmath>
+#include <ctime>
 
 class CalcUnit {
 public:
@@ -8,10 +10,6 @@ public:
 	std::vector <double> Const_Nums;
 
 	CalcUnit();
-
-	double Calculate_Input(std::string hex_input) {
-		
-	}
 
 	double Calculate_Result(double input);
 };

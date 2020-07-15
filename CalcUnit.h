@@ -11,5 +11,5 @@ public:
 
 	CalcUnit();
 
-	double Calculate_Result(double input);
+	double Calculate_Result(double input, const int &bit_len);
 };

@@ -24,6 +24,16 @@ bool DatabaseUnit::Connect_Database() {
 	}
 }
 
+bool DatabaseUnit::CreateTable_Database(std::string sql_str) {
+	if (mysql_query(&Mysql, sql_str.c_str())) {
+		std::cout << "Query Failed:" << mysql_error(&Mysql) << std::endl;
+		return false;
+	}
+	else {
+		std::cout << "Create Table Success" << std::endl;
+	}
+}
+
 bool DatabaseUnit::Query_Database(std::string sql_str) {
 	// 返回0 查询成功，返回1查询失败 
 	if (mysql_query(&Mysql, sql_str.c_str())) {
@@ -36,7 +46,7 @@ bool DatabaseUnit::Query_Database(std::string sql_str) {
 	
 	//获得sql语句结束后返回的结果集  
 	if (!(this->Res = mysql_store_result(&Mysql))) {
-		printf("Couldn't get result from %s\n", mysql_error(&Mysql));
+		std::cout << "Couldn't get result from " << mysql_error(&Mysql) << std::endl;
 		return false;
 	}
 	return true;
@@ -45,12 +55,12 @@ bool DatabaseUnit::Query_Database(std::string sql_str) {
 bool DatabaseUnit::Insert_Database(std::string sql_str) {
 	if (mysql_query(&Mysql, sql_str.c_str()))        //执行SQL语句  
 	{
-		printf("Query failed (%s)\n", mysql_error(&Mysql));
+		std::cout << "Query Failed:" << mysql_error(&Mysql) << std::endl;
 		return false;
 	}
 	else
 	{
-		printf("Insert success\n");
+		std::cout << "Insert Success" << std::endl;
 		return true;
 	}
 }
@@ -58,12 +68,12 @@ bool DatabaseUnit::Insert_Database(std::string sql_str) {
 bool DatabaseUnit::Delete_Database(std::string sql_str) {
 	if (mysql_query(&Mysql, sql_str.c_str()))        //执行SQL语句  
 	{
-		printf("Query failed (%s)\n", mysql_error(&Mysql));
+		std::cout << "Query Failed:" << mysql_error(&Mysql) << std::endl;
 		return false;
 	}
 	else
 	{
-		printf("Delete success\n");
+		std::cout << "Delete Success" << std::endl;
 		return true;
 	}
 }

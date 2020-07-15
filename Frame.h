@@ -1,3 +1,4 @@
+#include <vector>
 #include "Package.h"
 
 const int FrameLength = 512;

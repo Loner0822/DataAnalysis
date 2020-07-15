@@ -5,7 +5,7 @@
 #include <vector>
 #include <map>
 #include <algorithm>
-#include<iomanip>
+#include <ctime>
 #include "Frame.h"
 #include "tinyxml2.h"
 #include "DatabaseUnit.h"
@@ -264,15 +264,72 @@ std::string VirtualBand_To_DataString(std::string virtual_band, const Package& p
     return res_str;
 }
 
+// 计算结果
 std::string Calculate_To_DataString(const std::string &input, std::vector<CalcUnit> &calc_list) {
     double res = std::stoi(input, nullptr, 16);
+    int res_int;
     for (int i = 0; i < calc_list.size(); ++i) {
         if (calc_list[i].Calc_Id == 50 || calc_list[i].Calc_Id == 51) {
             calc_list[i].Const_Nums.push_back(CONST_5V_VOLT);
         }
-        res = calc_list[i].Calculate_Result(res);
+        res = calc_list[i].Calculate_Result(res, input.size() * 8);
     }
     return std::to_string(res);
+}
+
+std::string Get_Now_Date_String() {
+    time_t now = time(0);
+    tm ltm;
+    localtime_s(&ltm, &now);
+    std::string year, month, day;
+    year = std::to_string(1900 + ltm.tm_year);
+    while (year.size() < 4) {
+        year = "0" + year;
+    }
+    month = std::to_string(1 + ltm.tm_mon);
+    while (month.size() < 2) {
+        month = "0" + month;
+    }
+    day = std::to_string(ltm.tm_mday);
+    while (day.size() < 2) {
+        day = "0" + day;
+    }
+    return year + month + day;
+}
+
+std::string Get_Now_Time_String() {
+    time_t now = time(0);
+    tm ltm;
+    localtime_s(&ltm, &now);
+    std::string year, month, day;
+    year = std::to_string(1900 + ltm.tm_year);
+    while (year.size() < 4) {
+        year = "0" + year;
+    }
+    month = std::to_string(1 + ltm.tm_mon);
+    while (month.size() < 2) {
+        month = "0" + month;
+    }
+    day = std::to_string(ltm.tm_mday);
+    while (day.size() < 2) {
+        day = "0" + day;
+    }
+
+    std::string hour, minute, second;
+    hour = std::to_string(ltm.tm_hour);
+    while (hour.size() < 2) {
+        hour = "0" + hour;
+    }
+    minute = std::to_string(ltm.tm_min);
+    while (minute.size() < 2) {
+        minute = "0" + minute;
+    }
+    second = std::to_string(ltm.tm_sec);
+    while (second.size() < 2) {
+        second = "0" + second;
+    }
+
+    return year + "." + month + "." + second + " " + hour + ":" + minute + ":" + second;
 }
 
 int main() {
@@ -292,23 +349,25 @@ int main() {
     std::string host = "localhost";
     std::string user = "root";
     std::string password = "0822";
-    std::string tablename = "workspace";
+    std::string dbname = "workspace";
     int port = 3306;
-    DatabaseUnit DB_Para(host, user, password, tablename, 3306);
+    DatabaseUnit DB_Para(host, user, password, dbname, 3306);
     if (!DB_Para.Connect_Database()) {
         return 0;
     }
 
-    // 存储数据库
+    // 读取数据库
     std::map<std::string, OperatorUnit> Para_Data;
-    DB_Para.Query_Database("select sys_name, param_code, param_name, param_index from t_tm_parameters");
+    std::string str_sql = "select sys_name, param_code, param_name, type, param_index from t_tm_parameters";
+    DB_Para.Query_Database(str_sql);
     MYSQL_ROW row;
     OperatorUnit tmp_opunit;
     while (row = mysql_fetch_row(DB_Para.Res)) {
         tmp_opunit.Sys_Name = row[0];
         tmp_opunit.Para_Code = row[1];
         tmp_opunit.Para_Name = row[2];
-        tmp_opunit.Para_Index = row[3];
+        tmp_opunit.Type = std::stoi(row[3]);
+        tmp_opunit.Para_Index = row[4];
         tmp_opunit.Para_Method = Para_Method_Map[row[1]];
         Para_Data[tmp_opunit.Para_Index] = tmp_opunit;
     }
@@ -346,12 +405,42 @@ int main() {
     std::string Id_Code, Format_Code;
     std::vector <std::pair<int, std::string>> Para_Code;
     std::string Para_Index;
+
+    std::string now_date = Get_Now_Date_String();
+    std::string table_name = "analysis_result_S_" + now_date;
+    str_sql = "create table if not exists " + table_name + " like analysis_result_S";
+    DB_Para.CreateTable_Database(str_sql);
+
+    Package now;
     OperatorUnit tmp_op;
-    //std::vector <CalcUnit> 
-    DB_Para.Delete_Database("delete from my_out");
-    for (int i = 0; i < 4/*Frame_Data.size()*/; ++i) {
+    std::string para_idx;
+    std::string now_time;
+    std::string star_num;
+    int star_val;
+    std::string pkg_id;
+    std::string pkg_code;
+    std::string pkg_res;
+    std::string pkg_show;
+    double res_double;
+    int res_int;
+    std::vector<std::string> Vec_Method;
+
+    for (int i = 0; i < 1/*Frame_Data.size()*/; ++i) {
+        star_num = Frame_Data[i].Frame_Leader.substr(0, 3);
+        star_val = std::stoi(star_num, nullptr, 16);
+        switch (star_val) {
+        case 597:
+            star_num = u8"01星";
+            break;
+        case 602:
+            star_num = u8"02星";
+            break;
+        default:
+            star_num = u8"未识别";
+            break;
+        }
         for (int j = 0; j < 3; ++j) {
-            Package now = Frame_Data[i].Data[j];
+            now = Frame_Data[i].Data[j];
             Id_Code = now.Package_Leader.substr(2, 2);
             Format_Code = FormatDesc_Map[Id_Code];
             if (Format_Map.count(Format_Code))
@@ -359,23 +448,54 @@ int main() {
             else
                 continue;
             for (int k = 0; k < Para_Code.size(); ++k) {
-                std::string para_idx = std::to_string(Para_Code[k].first);
+                para_idx = std::to_string(Para_Code[k].first);
                 tmp_op = Para_Data[para_idx];
-                std::string str_sql = "insert into my_out (para_index, sys_name, para_code, para_name, para_method, virtual_band, pkg_value, pkg_result) values ('";
-                str_sql += para_idx + "', '";
-                str_sql += tmp_op.Sys_Name + "', '";
-                str_sql += tmp_op.Para_Code + "', '";
-                str_sql += tmp_op.Para_Name + "', '";
-                str_sql += tmp_op.Para_Method + "', '";
-                str_sql += Para_Code[k].second + "', '";
-                std::string vir_band = VirtualBand_To_DataString(Para_Code[k].second, now);
-                str_sql += vir_band + "', '";
-                std::string pkg_res = Calculate_To_DataString(vir_band, Para_Calc_Map[para_idx]);
-                str_sql += pkg_res + "');";
-                DB_Para.Insert_Database(str_sql);
+                now_time = Get_Now_Time_String();
+                pkg_id = tmp_op.Sys_Name.substr(0, 4);
+                pkg_code = VirtualBand_To_DataString(Para_Code[k].second, now);
+                pkg_res = Calculate_To_DataString(pkg_code, Para_Calc_Map[para_idx]);
+                pkg_show = "";
                 if (para_idx == "1101") {
                     CONST_5V_VOLT = std::stof(pkg_res);
                 }
+                double res_double = std::stof(pkg_res);
+                int res_int = int(res_double + 0.5);
+                std::map<int, std::string> show_pos;
+                switch (tmp_op.Type) {
+                case 0:
+                    pkg_res = std::to_string(res_int);
+                    if (tmp_op.Para_Method != "") {
+                        Vec_Method = My_Split(tmp_op.Para_Method, ":;");
+                        for (int i = 0; i < Vec_Method.size(); i += 2) {
+                            if (std::stoi(Vec_Method[i]) == res_int) {
+                                pkg_show = Vec_Method[i + 1];
+                                break;
+                            }
+                        }
+                    }
+                    else {
+                        pkg_res = std::to_string(res_int);
+                        pkg_show = std::to_string(res_int);
+                    }
+                    break;
+                case 1:
+                    pkg_res = std::to_string(res_int);
+                    pkg_show = std::to_string(res_int);
+                    break;
+                case 2:
+                    pkg_show = std::to_string(res_double);
+                    break;
+                }
+                str_sql = "insert into " + table_name + " (Create_time, Star_num, Package_id, Parameter_index, Parameter_name, Code, Value, Value_show) values ('";
+                str_sql += now_time + "', '";
+                str_sql += star_num + "', '";
+                str_sql += pkg_id + "', '";
+                str_sql += para_idx + "', '";
+                str_sql += tmp_op.Para_Name + "', '";
+                str_sql += pkg_code + "', ";
+                str_sql += pkg_res + ", '";
+                str_sql += pkg_show + "');";
+                DB_Para.Insert_Database(str_sql);
             }
         }
     }

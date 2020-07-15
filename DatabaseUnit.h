@@ -16,6 +16,8 @@ public:
 	//返回false则连接失败，返回true则连接成功  
 	bool Connect_Database();
 
+	bool CreateTable_Database(std::string sql_str);
+
 	bool Query_Database(std::string sql_str);
 
 	bool Insert_Database(std::string sql_str);

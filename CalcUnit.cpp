@@ -21,10 +21,11 @@ std::vector<int> Get_Bit_From_Input(int value, int &pos, int &len) {
 	return res;
 }
 
-double CalcUnit::Calculate_Result(double input) {
+double CalcUnit::Calculate_Result(double input, const int &bit_len) {
 	double res = 0;
 	std::vector<int> bit_vec;
-	int num_len, num_val, pos;
+	bool have_val;
+	int num_len, num_val, pos, e;
 	double const_v, x, u, r, val1, val2;
 	switch (Calc_Id) {
 	case 7:				// 补码
@@ -48,7 +49,7 @@ double CalcUnit::Calculate_Result(double input) {
 			res = res * input + Const_Nums[i];
 		}
 		break;
-	case 9:
+	case 9:				// 缓存
 		res = input;
 		break;
 	case 10:			// 提取所需位 十进制显示
@@ -61,17 +62,80 @@ double CalcUnit::Calculate_Result(double input) {
 	case 11:
 		res = Const_Nums[0] * input + Const_Nums[1];
 		break;
-	case 12:
-		res = input;
+	case 12:			// 补码
+		pos = bit_len - 1, num_len = bit_len;
+		bit_vec = Get_Bit_From_Input(int(input + 0.5), pos, num_len);
+		if (bit_vec[pos] == 0) {
+			for (int i = pos - 1; i > pos - num_len; --i) {
+				res = res * 2 + bit_vec[i];
+			}
+		}
+		else {
+			for (int i = pos - 1; i > pos - num_len; --i) {
+				res = res * 2 + (1 - bit_vec[i]);
+			}
+			res = -res - 1;
+		}
 		break;
-	case 13:
-		res = input;
+	case 13:			// IEEE 浮点 32位
+		pos = bit_len - 1, num_len = bit_len;
+		bit_vec = Get_Bit_From_Input(int(input + 0.5), pos, num_len);
+		e = 0;
+		for (int i = pos - 1; i >= pos - 8; --i) {
+			e = e * 2 + bit_vec[i];
+		}
+		have_val = 0;
+		for (int i = 0; i <= pos - 9; ++i) {
+			res = (res + bit_vec[i]) / 2.0;
+			if (bit_vec[i])
+				have_val = 1;
+		}
+		switch (e)
+		{
+		case 0:
+			res = res * pow(2, -128);
+			break;
+		case 255:
+			if (have_val) {
+				res = NAN;
+			}
+			else {
+				res = INFINITY;
+			}
+			break;
+		default:
+			e -= 127;
+			res = (res + 1) * pow(2, e);
+			break;
+		}
+		if (bit_vec[pos] != 0) {
+			res = -res;
+		}
 		break;
-	case 14:
-		res = input;
+	case 14:			// 补码 无符号
+		pos = bit_len - 1, num_len = bit_len;
+		bit_vec = Get_Bit_From_Input(int(input + 0.5), pos, num_len);
+		for (int i = pos; i > pos - num_len; --i) {
+			res = res * 2 + bit_vec[i];
+		}
 		break;
-	case 20:
-		res = input;
+	case 20:			// 补码 非符号位/2^(15) 再平方
+		pos = bit_len - 1, num_len = bit_len;
+		bit_vec = Get_Bit_From_Input(int(input + 0.5), pos, num_len);
+		if (bit_vec[pos] == 0) {
+			for (int i = pos - 1; i > pos - num_len; --i) {
+				res = res * 2 + bit_vec[i];
+			}
+			res = pow(res * pow(2, -15), 2);
+		}
+		else {
+			for (int i = pos - 1; i > pos - num_len; --i) {
+				res = res * 2 + (1 - bit_vec[i]);
+			}
+			res = -res - 1;
+			res = -pow((-res) * pow(2, -15), 2);
+		}
+
 		break;
 	case 22:			// 积日 积秒
 		num_val = int(input + 0.5);
@@ -86,7 +150,7 @@ double CalcUnit::Calculate_Result(double input) {
 	case 23:			// input*A[0]^A[1]
 		res = input * pow(Const_Nums[0], Const_Nums[1]);
 		break;
-	case 24:
+	case 24:			// 不用
 		res = input;
 		break;
 	case 26:			// A[0]*ln(input) + A[1]
@@ -123,10 +187,10 @@ double CalcUnit::Calculate_Result(double input) {
 		x = u * 10000 / (const_v - u);
 		res = (-Const_Nums[2]) / (-Const_Nums[3] + sqrt(Const_Nums[4] - (-Const_Nums[5] * (-Const_Nums[6]-log(x))))) - Const_Nums[7];
 		break;
-	case 52:
+	case 52:			// 不用
 		res = input;
 		break;
-	case 53:
+	case 53:			// 多种公式
 		switch (int(Const_Nums[0] + 0.5))
 		{
 		case 1:

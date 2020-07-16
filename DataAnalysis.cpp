@@ -127,6 +127,66 @@ std::vector<std::string> My_Split(const std::string& s, const std::string& seper
     return result;
 }
 
+// 获取今日日期
+std::string Get_Now_Date_String(int type = 0, time_t now = time(0)) {
+    tm ltm;
+    localtime_s(&ltm, &now);
+    std::string year, month, day;
+    year = std::to_string(1900 + ltm.tm_year);
+    while (year.size() < 4) {
+        year = "0" + year;
+    }
+    month = std::to_string(1 + ltm.tm_mon);
+    while (month.size() < 2) {
+        month = "0" + month;
+    }
+    day = std::to_string(ltm.tm_mday);
+    while (day.size() < 2) {
+        day = "0" + day;
+    }
+    if (type == 0)
+        return year + month + day;
+    else
+        return year + "." + month + "." + day;
+}
+
+// 获取当前时间
+std::string Get_Now_Time_String(int type = 0, time_t now = time(0)) {
+    tm ltm;
+    localtime_s(&ltm, &now);
+    std::string year, month, day;
+    year = std::to_string(1900 + ltm.tm_year);
+    while (year.size() < 4) {
+        year = "0" + year;
+    }
+    month = std::to_string(1 + ltm.tm_mon);
+    while (month.size() < 2) {
+        month = "0" + month;
+    }
+    day = std::to_string(ltm.tm_mday);
+    while (day.size() < 2) {
+        day = "0" + day;
+    }
+
+    std::string hour, minute, second;
+    hour = std::to_string(ltm.tm_hour);
+    while (hour.size() < 2) {
+        hour = "0" + hour;
+    }
+    minute = std::to_string(ltm.tm_min);
+    while (minute.size() < 2) {
+        minute = "0" + minute;
+    }
+    second = std::to_string(ltm.tm_sec);
+    while (second.size() < 2) {
+        second = "0" + second;
+    }
+    if (type == 0)
+        return year + "." + month + "." + second + " " + hour + ":" + minute + ":" + second;
+    else
+        return hour + ":" + minute + ":" + second;
+}
+
 // 按csv文件建立Para_Method Map
 void Build_Para_Method_Map(std::map<std::string, std::string>& res_map, std::string& str) {
     std::string::iterator it;
@@ -277,59 +337,83 @@ std::string Calculate_To_DataString(const std::string &input, std::vector<CalcUn
     return std::to_string(res);
 }
 
-std::string Get_Now_Date_String() {
-    time_t now = time(0);
-    tm ltm;
-    localtime_s(&ltm, &now);
-    std::string year, month, day;
-    year = std::to_string(1900 + ltm.tm_year);
-    while (year.size() < 4) {
-        year = "0" + year;
-    }
-    month = std::to_string(1 + ltm.tm_mon);
-    while (month.size() < 2) {
-        month = "0" + month;
-    }
-    day = std::to_string(ltm.tm_mday);
-    while (day.size() < 2) {
-        day = "0" + day;
-    }
-    return year + month + day;
-}
+std::string Calculate_To_DataShow(std::string& res_str, const OperatorUnit& op, const std::string& code) {
+    std::string show_str = "";
+    std::vector<std::string> vec_type = My_Split(op.Type, ",");
+    std::vector<std::string> vec_method;
+    std::vector<int> vec_digit;
+    int type_int = std::stoi(vec_type[0]);
+    double res_double = std::stof(res_str);
+    int res_int = int(res_double + 0.5), days, seconds;
+    // 时间 2000.1.1 12:00 开始计时 10957 * 3600 * 24 + 12 * 3600 为 1970.1.1 00:00 到 2000.1.1 00:00 秒数
+    time_t t = res_int + 10957 * 3600 * 24 + 12 * 3600;
+    switch (type_int)
+    {
+    case 0:
+        res_str = std::to_string(res_int);
+        if (op.Para_Method != "") {
+            vec_method = My_Split(op.Para_Method, ":;");
+            for (int i = 0; i < vec_method.size(); i += 2) {
+                if (std::stoi(vec_method[i]) == res_int) {
+                    return vec_method[i + 1];
+                }
+            }
+            return res_str + u8"(暂无翻译)";
+        }
+        else {
+            return res_str + u8"(暂无翻译)";
+        }
+    case 1:
+        res_str = std::to_string(res_int);
+        return res_str;
+    case 2:
+        res_str = std::to_string(res_int);
+        while (res_int) {
+            vec_digit.push_back(res_int & 15);
+            res_int >>= 4;
+        }
+        for (int i = 0; i < vec_digit.size(); ++i) {
+            if (0 <= vec_digit[i] && vec_digit[i] <= 9) {
+                show_str = std::to_string(vec_digit[i]) + show_str;
+            }
+            else {
+                show_str = std::string(1, vec_digit[i] - 10 + 'A') + show_str;
+            }
+        }
+        while (show_str.size() < code.size())
+            show_str = "0" + show_str;
+        return show_str;
+    case 3:
+        res_str = std::to_string(res_int);
+        while (res_int) {
+            vec_digit.push_back(res_int & 1);
+            res_int >>= 1;
+        }
+        for (int i = 0; i < vec_digit.size(); ++i) {
+            show_str = std::to_string(vec_digit[i]) + show_str;
+        }
+        while (show_str.size() < code.size() * 4)
+            show_str = "0" + show_str;
+        return show_str;
+    case 4:
+        return res_str;
+    case 5:
+        return res_str;
 
-std::string Get_Now_Time_String() {
-    time_t now = time(0);
-    tm ltm;
-    localtime_s(&ltm, &now);
-    std::string year, month, day;
-    year = std::to_string(1900 + ltm.tm_year);
-    while (year.size() < 4) {
-        year = "0" + year;
+    
+    case 6:
+        res_str = std::to_string(res_int);
+        return Get_Now_Time_String(0, t);
+    case 7:
+        res_str = std::to_string(res_int);
+        return Get_Now_Date_String(1, t);
+    case 8:
+        res_str = std::to_string(res_int);
+        return Get_Now_Time_String(1, t);
+    default:
+        return res_str;
     }
-    month = std::to_string(1 + ltm.tm_mon);
-    while (month.size() < 2) {
-        month = "0" + month;
-    }
-    day = std::to_string(ltm.tm_mday);
-    while (day.size() < 2) {
-        day = "0" + day;
-    }
-
-    std::string hour, minute, second;
-    hour = std::to_string(ltm.tm_hour);
-    while (hour.size() < 2) {
-        hour = "0" + hour;
-    }
-    minute = std::to_string(ltm.tm_min);
-    while (minute.size() < 2) {
-        minute = "0" + minute;
-    }
-    second = std::to_string(ltm.tm_sec);
-    while (second.size() < 2) {
-        second = "0" + second;
-    }
-
-    return year + "." + month + "." + second + " " + hour + ":" + minute + ":" + second;
+    return res_str;
 }
 
 int main() {
@@ -358,7 +442,7 @@ int main() {
 
     // 读取数据库
     std::map<std::string, OperatorUnit> Para_Data;
-    std::string str_sql = "select sys_name, param_code, param_name, type, param_index from t_tm_parameters";
+    std::string str_sql = "select sys_name, param_code, param_name, my_type, param_index from t_tm_parameters";
     DB_Para.Query_Database(str_sql);
     MYSQL_ROW row;
     OperatorUnit tmp_opunit;
@@ -366,7 +450,7 @@ int main() {
         tmp_opunit.Sys_Name = row[0];
         tmp_opunit.Para_Code = row[1];
         tmp_opunit.Para_Name = row[2];
-        tmp_opunit.Type = std::stoi(row[3]);
+        tmp_opunit.Type = row[3];
         tmp_opunit.Para_Index = row[4];
         tmp_opunit.Para_Method = Para_Method_Map[row[1]];
         Para_Data[tmp_opunit.Para_Index] = tmp_opunit;
@@ -425,7 +509,7 @@ int main() {
     int res_int;
     std::vector<std::string> Vec_Method;
 
-    for (int i = 0; i < 1/*Frame_Data.size()*/; ++i) {
+    for (int i = 0; i < 10/*Frame_Data.size()*/; ++i) {
         star_num = Frame_Data[i].Frame_Leader.substr(0, 3);
         star_val = std::stoi(star_num, nullptr, 16);
         switch (star_val) {
@@ -454,37 +538,9 @@ int main() {
                 pkg_id = tmp_op.Sys_Name.substr(0, 4);
                 pkg_code = VirtualBand_To_DataString(Para_Code[k].second, now);
                 pkg_res = Calculate_To_DataString(pkg_code, Para_Calc_Map[para_idx]);
-                pkg_show = "";
+                pkg_show = Calculate_To_DataShow(pkg_res, tmp_op, pkg_code);
                 if (para_idx == "1101") {
                     CONST_5V_VOLT = std::stof(pkg_res);
-                }
-                double res_double = std::stof(pkg_res);
-                int res_int = int(res_double + 0.5);
-                std::map<int, std::string> show_pos;
-                switch (tmp_op.Type) {
-                case 0:
-                    pkg_res = std::to_string(res_int);
-                    if (tmp_op.Para_Method != "") {
-                        Vec_Method = My_Split(tmp_op.Para_Method, ":;");
-                        for (int i = 0; i < Vec_Method.size(); i += 2) {
-                            if (std::stoi(Vec_Method[i]) == res_int) {
-                                pkg_show = Vec_Method[i + 1];
-                                break;
-                            }
-                        }
-                    }
-                    else {
-                        pkg_res = std::to_string(res_int);
-                        pkg_show = std::to_string(res_int);
-                    }
-                    break;
-                case 1:
-                    pkg_res = std::to_string(res_int);
-                    pkg_show = std::to_string(res_int);
-                    break;
-                case 2:
-                    pkg_show = std::to_string(res_double);
-                    break;
                 }
                 str_sql = "insert into " + table_name + " (Create_time, Star_num, Package_id, Parameter_index, Parameter_name, Code, Value, Value_show) values ('";
                 str_sql += now_time + "', '";

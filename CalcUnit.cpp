@@ -138,14 +138,6 @@ double CalcUnit::Calculate_Result(double input, const int &bit_len) {
 
 		break;
 	case 22:			// »ıÈÕ »ıÃë
-		/*num_val = int(input + 0.5);
-		pos = int(Const_Nums[0] + 0.5);
-		if (pos == 1) {
-			res = int(num_val / (3600 * 24));
-		}
-		else {
-			res = num_val % (3600 * 24);
-		}*/
 		res = input;
 		break;
 	case 23:			// input*A[0]^A[1]

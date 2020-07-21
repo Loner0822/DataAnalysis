@@ -1,9 +1,10 @@
-#include <iostream>
+ï»¿#include <iostream>
 #include "DatabaseUnit.h"
 
-DatabaseUnit::DatabaseUnit(const std::string &host, const std::string &user, const std::string &psw, const std::string &table_name, const int &port) {
-	// Á¬½Ómysql£¬Êı¾İ¿â
+DatabaseUnit::DatabaseUnit(const std::string& host, const std::string& user, const std::string& psw, const std::string& table_name, const int& port) {
+	// è¿æ¥mysqlï¼Œæ•°æ®åº“
 	mysql_init(&Mysql);
+	//mysql_options(&Mysql, MYSQL_SET_CHARSET_NAME, "gbk");
 	this->Host = host;
 	this->User = user;
 	this->PSW = psw;
@@ -13,18 +14,20 @@ DatabaseUnit::DatabaseUnit(const std::string &host, const std::string &user, con
 }
 
 bool DatabaseUnit::Connect_Database() {
-	// ÖĞ¼ä·Ö±ğÊÇÖ÷»ú£¬ÓÃ»§Ãû£¬ÃÜÂë£¬Êı¾İ¿âÃû£¬¶Ë¿ÚºÅ£¨¿ÉÒÔĞ´Ä¬ÈÏ0»òÕß3306µÈ£©£¬¿ÉÒÔÏÈĞ´³É²ÎÊıÔÙ´«½øÈ¥
+	// ä¸­é—´åˆ†åˆ«æ˜¯ä¸»æœºï¼Œç”¨æˆ·åï¼Œå¯†ç ï¼Œæ•°æ®åº“åï¼Œç«¯å£å·ï¼ˆå¯ä»¥å†™é»˜è®¤0æˆ–è€…3306ç­‰ï¼‰ï¼Œå¯ä»¥å…ˆå†™æˆå‚æ•°å†ä¼ è¿›å»
 	if (!(mysql_real_connect(&Mysql, Host.c_str(), User.c_str(), PSW.c_str(), TableName.c_str(), Port, NULL, 0))) {
 		std::cout << "Error Connecting To Database:" << mysql_error(&Mysql) << std::endl;
 		return false;
 	}
 	else {
+		//mysql_query(&Mysql, "SET NAMES GB2312");
 		std::cout << "Connect Success" << std::endl;
-	return true;
+		return true;
 	}
 }
 
 bool DatabaseUnit::CreateTable_Database(std::string sql_str) {
+	//sql_str = G2U(sql_str.c_str());
 	if (mysql_query(&Mysql, sql_str.c_str())) {
 		std::cout << "Query Failed:" << mysql_error(&Mysql) << std::endl;
 		return false;
@@ -35,7 +38,8 @@ bool DatabaseUnit::CreateTable_Database(std::string sql_str) {
 }
 
 bool DatabaseUnit::Query_Database(std::string sql_str) {
-	// ·µ»Ø0 ²éÑ¯³É¹¦£¬·µ»Ø1²éÑ¯Ê§°Ü 
+	//sql_str = G2U(sql_str.c_str());
+	// è¿”å›0 æŸ¥è¯¢æˆåŠŸï¼Œè¿”å›1æŸ¥è¯¢å¤±è´¥ 
 	if (mysql_query(&Mysql, sql_str.c_str())) {
 		std::cout << "Query Failed:" << mysql_error(&Mysql) << std::endl;
 		return false;
@@ -43,8 +47,8 @@ bool DatabaseUnit::Query_Database(std::string sql_str) {
 	else {
 		std::cout << "Query Success" << std::endl;
 	}
-	
-	//»ñµÃsqlÓï¾ä½áÊøºó·µ»ØµÄ½á¹û¼¯  
+
+	//è·å¾—sqlè¯­å¥ç»“æŸåè¿”å›çš„ç»“æœé›†  
 	if (!(this->Res = mysql_store_result(&Mysql))) {
 		std::cout << "Couldn't get result from " << mysql_error(&Mysql) << std::endl;
 		return false;
@@ -53,7 +57,8 @@ bool DatabaseUnit::Query_Database(std::string sql_str) {
 }
 
 bool DatabaseUnit::Insert_Database(std::string sql_str) {
-	if (mysql_query(&Mysql, sql_str.c_str()))        //Ö´ĞĞSQLÓï¾ä  
+	//sql_str = G2U(sql_str.c_str());
+	if (mysql_query(&Mysql, sql_str.c_str()))        //æ‰§è¡ŒSQLè¯­å¥  
 	{
 		std::cout << "Query Failed:" << mysql_error(&Mysql) << std::endl;
 		return false;
@@ -66,7 +71,8 @@ bool DatabaseUnit::Insert_Database(std::string sql_str) {
 }
 
 bool DatabaseUnit::Delete_Database(std::string sql_str) {
-	if (mysql_query(&Mysql, sql_str.c_str()))        //Ö´ĞĞSQLÓï¾ä  
+	//sql_str = G2U(sql_str.c_str());
+	if (mysql_query(&Mysql, sql_str.c_str()))        //æ‰§è¡ŒSQLè¯­å¥  
 	{
 		std::cout << "Query Failed:" << mysql_error(&Mysql) << std::endl;
 		return false;
@@ -79,6 +85,6 @@ bool DatabaseUnit::Delete_Database(std::string sql_str) {
 }
 
 void DatabaseUnit::Free_Database() {
-	mysql_free_result(Res);  //ÊÍ·ÅÒ»¸ö½á¹û¼¯ºÏÊ¹ÓÃµÄÄÚ´æ¡£
-	mysql_close(&Mysql);	 //¹Ø±ÕÒ»¸ö·şÎñÆ÷Á¬½Ó¡£
+	mysql_free_result(Res);  //é‡Šæ”¾ä¸€ä¸ªç»“æœé›†åˆä½¿ç”¨çš„å†…å­˜ã€‚
+	mysql_close(&Mysql);	 //å…³é—­ä¸€ä¸ªæœåŠ¡å™¨è¿æ¥ã€‚
 }

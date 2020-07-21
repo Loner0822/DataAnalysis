@@ -214,8 +214,34 @@ void Build_Para_Method_Map(std::map<std::string, std::string>& res_map, std::str
 		}
 	}
 	std::vector<std::string> para_index_method = My_Split(str, "\"");
-	for (int i = 0; i < para_index_method.size() / 2; ++i) {
-		res_map[para_index_method[i * 2]] = para_index_method[i * 2 + 1];
+	for (int i = 0; i < para_index_method.size(); i += 2) {
+		res_map[para_index_method[i]] = para_index_method[i + 1];
+	}
+}
+
+void Build_Star_Map(std::map<std::string, std::string>& res_map, std::string& str) {
+	std::string::iterator it;
+	for (it = str.begin(); it < str.end(); ++it) {
+		if (*it == '\n') {
+			str.erase(it);
+			it--;
+		}
+		else if (*it == '\r') {
+			str.erase(it);
+			it--;
+		}
+		else if (*it == '\t') {
+			str.erase(it);
+			it--;
+		}
+		else if (*it == ',') {
+			str.erase(it);
+			it--;
+		}
+	}
+	std::vector<std::string> star_msg = My_Split(str, "\"");
+	for (int i = 0; i < star_msg.size(); i += 2) {
+		res_map[star_msg[i]] = star_msg[i + 1];
 	}
 }
 
@@ -342,6 +368,7 @@ std::string Calculate_To_DataString(const std::string& input, std::vector<CalcUn
 	return std::to_string(res);
 }
 
+// 处理显示结果
 std::string Calculate_To_DataShow(std::string& res_str, const OperatorUnit& op, const std::string& code) {
 	std::string show_str = "";
 	std::vector<std::string> vec_type = My_Split(op.Type, ",");
@@ -368,10 +395,10 @@ std::string Calculate_To_DataShow(std::string& res_str, const OperatorUnit& op, 
 					return vec_method[i + 1];
 				}
 			}
-			return res_str + "(暂无翻译)";
+			return res_str + u8"(暂无翻译)";
 		}
 		else {
-			return res_str + "(暂无翻译)";
+			return res_str + u8"(暂无翻译)";
 		}
 	case 1:
 		res_str = std::to_string(res_int);
@@ -440,6 +467,16 @@ int main() {
 	std::map<std::string, std::string> Para_Method_Map;
 	Build_Para_Method_Map(Para_Method_Map, file_str);
 	file_str.clear();
+	fin.close();
+
+	// 读取CSV 获取卫星信息
+	fin.open("卫星.csv", std::ios::in);
+	while (std::getline(fin, line_str)) {
+		file_str += line_str;
+	}
+
+	std::map<std::string, std::string> Star_Map;
+	Build_Star_Map(Star_Map, file_str);
 
 	// 连接MySQL
 	std::string host = "localhost";
@@ -496,11 +533,6 @@ int main() {
 	//Save_Data_By_Frame(Frame_Data, File_String);
 	//File_String.clear();
 
-	std::string now_date = Get_Now_Date_String();
-	std::string table_name = "analysis_result_S_" + now_date;
-	str_sql = "create table if not exists " + table_name + " like analysis_result_S";
-	DB_Para.CreateTable_Database(str_sql);
-
 	std::string Frame_String;
 	Frame Frame_Data;
 	std::string star_num;
@@ -512,7 +544,7 @@ int main() {
 	std::string pkg_res;
 	std::string pkg_show;
 	std::string queue_name = "test_queue";
-	int star_val;
+	//std::string star_val;
 	Package now;
 	OperatorUnit tmp_op;
 	std::vector <std::pair<int, std::string>> Para_Code;
@@ -521,24 +553,28 @@ int main() {
 	channel->DeclareQueue(queue_name, false, true, false, false);
 	std::string consumer_tag = channel->BasicConsume(queue_name);
 
+	// 表名
+	std::string now_date = Get_Now_Date_String();
+	std::string table_name = "analysis_result_S_" + now_date;
+
 	while (1) {
 		Envelope::ptr_t envelope = channel->BasicConsumeMessage(consumer_tag);
 		Frame_String = envelope->Message()->Body();
+		if (Frame_String == "exit")
+			break;
 		Frame_String = Bin_To_Hex(Frame_String);
 		Frame_Data = Frame(Frame_String);
 		star_num = Frame_Data.Frame_Leader.substr(0, 3);
-		star_val = std::stoi(star_num, nullptr, 16);
-		switch (star_val) {
-		case 597:
-			star_num = "01星";
-			break;
-		case 602:
-			star_num = "02星";
-			break;
-		default:
-			star_num = "未识别";
-			break;
+
+		if (Star_Map.count(star_num) > 0) {
+			star_num = Star_Map[star_num];
 		}
+		else {
+			star_num = u8"未识别";
+		}
+		str_sql = "create table if not exists " + table_name + "_" + star_num + " like analysis_result_S";
+		DB_Para.CreateTable_Database(str_sql);
+
 		for (int j = 0; j < 3; ++j) {
 			now = Frame_Data.Data[j];
 			Id_Code = now.Package_Leader.substr(2, 2);
@@ -558,7 +594,7 @@ int main() {
 				if (para_idx == "1101") {
 					CONST_5V_VOLT = std::stof(pkg_res);
 				}
-				str_sql = "insert into " + table_name + " (Create_time, Star_num, Package_id, Parameter_index, Parameter_name, Code, Value, Value_show) values ('";
+				str_sql = "insert into " + table_name + "_" + star_num + " (Create_time, Star_num, Package_id, Parameter_index, Parameter_name, Code, Value, Value_show) values ('";
 				str_sql += now_time + "', '";
 				str_sql += star_num + "', '";
 				str_sql += pkg_id + "', '";
@@ -567,6 +603,7 @@ int main() {
 				str_sql += pkg_code + "', '";
 				str_sql += pkg_res + "', '";
 				str_sql += pkg_show + "');";
+				//std::cout << str_sql << std::endl;
 				DB_Para.Insert_Database(str_sql);
 			}
 		}

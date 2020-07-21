@@ -1,19 +1,19 @@
-#include <mysql.h>
+ï»¿#include <mysql.h>
 #include <string>
 
 class DatabaseUnit {
 public:
 	MYSQL Mysql;
-	MYSQL_RES *Res;
+	MYSQL_RES* Res;
 	std::string Host;
 	std::string User;
 	std::string PSW;
-	std::string TableName;
+	std::string dbName;
 	int Port;
-	
+
 	DatabaseUnit(const std::string& host, const std::string& user, const std::string& psw, const std::string& table_name, const int& port);
 
-	//·µ»ØfalseÔòÁ¬½ÓÊ§°Ü£¬·µ»ØtrueÔòÁ¬½Ó³É¹¦  
+	//è¿”å›falseåˆ™è¿æ¥å¤±è´¥ï¼Œè¿”å›trueåˆ™è¿æ¥æˆåŠŸ  
 	bool Connect_Database();
 
 	bool CreateTable_Database(std::string sql_str);

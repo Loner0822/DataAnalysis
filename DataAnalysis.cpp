@@ -187,7 +187,7 @@ std::string Get_Now_Time_String(int type = 0, time_t now = time(0)) {
 		second = "0" + second;
 	}
 	if (type == 0)
-		return year + "." + month + "." + second + " " + hour + ":" + minute + ":" + second;
+		return year + "." + month + "." + day + " " + hour + ":" + minute + ":" + second;
 	else
 		return hour + ":" + minute + ":" + second;
 }

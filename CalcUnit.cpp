@@ -1,4 +1,4 @@
-#include "CalcUnit.h"	
+ï»¿#include "CalcUnit.h"	
 
 CalcUnit::CalcUnit() {
 	this->Calc_Id = 0;
@@ -6,7 +6,7 @@ CalcUnit::CalcUnit() {
 	this->Const_Nums.clear();
 }
 
-std::vector<int> Get_Bit_From_Input(int value, int &pos, int &len) {
+std::vector<int> Get_Bit_From_Input(int value, int& pos, int& len) {
 	std::vector<int> res;
 	res.clear();
 	while (value) {
@@ -21,14 +21,14 @@ std::vector<int> Get_Bit_From_Input(int value, int &pos, int &len) {
 	return res;
 }
 
-double CalcUnit::Calculate_Result(double input, const int &bit_len) {
+double CalcUnit::Calculate_Result(double input, const int& bit_len) {
 	double res = 0;
 	std::vector<int> bit_vec;
 	bool have_val;
 	int num_len, num_val, pos, e;
 	double const_v, x, u, r, val1, val2;
 	switch (Calc_Id) {
-	case 7:				// ²¹Âë
+	case 7:				// è¡¥ç 
 		pos = Const_Nums[0], num_len = Const_Nums[1];
 		bit_vec = Get_Bit_From_Input(int(input + 0.5), pos, num_len);
 		if (bit_vec[pos] == 0) {
@@ -40,19 +40,19 @@ double CalcUnit::Calculate_Result(double input, const int &bit_len) {
 			for (int i = pos - 1; i > pos - num_len; --i) {
 				res = res * 2 + (1 - bit_vec[i]);
 			}
-			res = - res - 1;
+			res = -res - 1;
 		}
 		break;
-	case 8:				// ¶àÏîÊ½¼ÆËã
+	case 8:				// å¤šé¡¹å¼è®¡ç®—
 		num_len = int(Const_Nums[1] + 0.5);
 		for (int i = Const_Nums.size() - 1; i >= Const_Nums.size() - num_len; --i) {
 			res = res * input + Const_Nums[i];
 		}
 		break;
-	case 9:				// »º´æ
+	case 9:				// ç¼“å­˜
 		res = input;
 		break;
-	case 10:			// ÌáÈ¡ËùĞèÎ» Ê®½øÖÆÏÔÊ¾
+	case 10:			// æå–æ‰€éœ€ä½ åè¿›åˆ¶æ˜¾ç¤º
 		pos = Const_Nums[0], num_len = Const_Nums[1];
 		bit_vec = Get_Bit_From_Input(int(input + 0.5), pos, num_len);
 		for (int i = pos; i > pos - num_len; --i) {
@@ -62,7 +62,7 @@ double CalcUnit::Calculate_Result(double input, const int &bit_len) {
 	case 11:
 		res = Const_Nums[0] * input + Const_Nums[1];
 		break;
-	case 12:			// ²¹Âë
+	case 12:			// è¡¥ç 
 		pos = bit_len - 1, num_len = bit_len;
 		bit_vec = Get_Bit_From_Input(int(input + 0.5), pos, num_len);
 		if (bit_vec[pos] == 0) {
@@ -77,7 +77,7 @@ double CalcUnit::Calculate_Result(double input, const int &bit_len) {
 			res = -res - 1;
 		}
 		break;
-	case 13:			// IEEE ¸¡µã 32Î»
+	case 13:			// IEEE æµ®ç‚¹ 32ä½
 		pos = bit_len - 1, num_len = bit_len;
 		bit_vec = Get_Bit_From_Input(int(input + 0.5), pos, num_len);
 		e = 0;
@@ -112,14 +112,23 @@ double CalcUnit::Calculate_Result(double input, const int &bit_len) {
 			res = -res;
 		}
 		break;
-	case 14:			// ²¹Âë ÎŞ·ûºÅ
+	case 14:			// è¡¥ç  æ— ç¬¦å·
 		pos = bit_len - 1, num_len = bit_len;
 		bit_vec = Get_Bit_From_Input(int(input + 0.5), pos, num_len);
-		for (int i = pos; i > pos - num_len; --i) {
-			res = res * 2 + bit_vec[i];
+		if (bit_vec[pos] == 0) {
+			for (int i = pos - 1; i > pos - num_len; --i) {
+				res = res * 2 + bit_vec[i];
+			}
+		}
+		else {
+			res = 1.0;
+			for (int i = pos - 1; i > pos - num_len; --i) {
+				res = res * 2 + (1 - bit_vec[i]);
+			}
+			res = res + 1;
 		}
 		break;
-	case 20:			// ²¹Âë ·Ç·ûºÅÎ»/2^(15) ÔÙÆ½·½
+	case 20:			// è¡¥ç  éç¬¦å·ä½/2^(15) å†å¹³æ–¹
 		pos = bit_len - 1, num_len = bit_len;
 		bit_vec = Get_Bit_From_Input(int(input + 0.5), pos, num_len);
 		if (bit_vec[pos] == 0) {
@@ -137,25 +146,25 @@ double CalcUnit::Calculate_Result(double input, const int &bit_len) {
 		}
 
 		break;
-	case 22:			// »ıÈÕ »ıÃë
+	case 22:			// ç§¯æ—¥ ç§¯ç§’
 		res = input;
 		break;
 	case 23:			// input*A[0]^A[1]
 		res = input * pow(Const_Nums[0], Const_Nums[1]);
 		break;
-	case 24:			// ²»ÓÃ
+	case 24:			// ä¸ç”¨
 		res = input;
 		break;
 	case 26:			// A[0]*ln(input) + A[1]
 		res = Const_Nums[0] * log(input) + Const_Nums[1];
 		break;
-	case 28:			// ¶àÏîÊ½¼ÆËã	
+	case 28:			// å¤šé¡¹å¼è®¡ç®—	
 		input = input * 3.3 / 255.0;
 		for (int i = 0; i < Const_Nums.size(); ++i) {
 			res = res * input + Const_Nums[i];
 		}
 		break;
-	case 29:			// val1:A[0]~A[1]Î» val2:A[2]~A[3]Î» val1/10^(val2-A[4])
+	case 29:			// val1:A[0]~A[1]ä½ val2:A[2]~A[3]ä½ val1/10^(val2-A[4])
 		pos = Const_Nums[0], num_len = Const_Nums[1];
 		val1 = val2 = 0.0;
 		bit_vec = Get_Bit_From_Input(int(input + 0.5), pos, num_len);
@@ -168,22 +177,22 @@ double CalcUnit::Calculate_Result(double input, const int &bit_len) {
 		}
 		res = val1 / pow(10, val2 - Const_Nums[4]);
 		break;
-	case 50:			// ¸½Â¼ËÄ¼ÆËã
+	case 50:			// é™„å½•å››è®¡ç®—
 		const_v = Const_Nums[Const_Nums.size() - 1];
 		u = (input + 1) * 5 / 4096;
 		x = u * 10000 / (const_v - u);
 		res = (-172843.44828) / (-4622.53337 + sqrt(21367814.75677 - (-345686.89656 * (-6.01188 - log(x))))) - 273.15;
 		break;
-	case 51:			// ¸½Â¼ËÄ¼ÆËã(´ø²ÎÊı)
+	case 51:			// é™„å½•å››è®¡ç®—(å¸¦å‚æ•°)
 		const_v = Const_Nums[Const_Nums.size() - 1];
 		u = (input + 1) * 5 / 4096;
 		x = u * 10000 / (const_v - u);
-		res = (-Const_Nums[2]) / (-Const_Nums[3] + sqrt(Const_Nums[4] - (-Const_Nums[5] * (-Const_Nums[6]-log(x))))) - Const_Nums[7];
+		res = (-Const_Nums[2]) / (-Const_Nums[3] + sqrt(Const_Nums[4] - (-Const_Nums[5] * (-Const_Nums[6] - log(x))))) - Const_Nums[7];
 		break;
-	case 52:			// ²»ÓÃ
+	case 52:			// ä¸ç”¨
 		res = input;
 		break;
-	case 53:			// ¶àÖÖ¹«Ê½
+	case 53:			// å¤šç§å…¬å¼
 		switch (int(Const_Nums[0] + 0.5))
 		{
 		case 1:

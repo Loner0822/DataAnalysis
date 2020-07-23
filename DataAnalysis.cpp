@@ -192,7 +192,7 @@ std::string Get_Now_Time_String(int type = 0, time_t now = time(0)) {
 		return hour + ":" + minute + ":" + second;
 }
 
-// 按csv文件建立Para_Method Map
+// 按csv文件建立Para_Method_Map
 void Build_Para_Method_Map(std::map<std::string, std::string>& res_map, std::string& str) {
 	std::string::iterator it;
 	for (it = str.begin(); it < str.end(); ++it) {
@@ -219,6 +219,7 @@ void Build_Para_Method_Map(std::map<std::string, std::string>& res_map, std::str
 	}
 }
 
+// 按csv文件建立Star_Map
 void Build_Star_Map(std::map<std::string, std::string>& res_map, std::string& str) {
 	std::string::iterator it;
 	for (it = str.begin(); it < str.end(); ++it) {

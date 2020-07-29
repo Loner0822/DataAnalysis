@@ -8,11 +8,15 @@
 #include <algorithm>
 #include <ctime>
 #include <iomanip>
+//#include "windows.h"
 #include "Frame.h"
 #include "tinyxml2.h"
+#include "IniReader.h" 
 #include "DatabaseUnit.h"
 #include "OperatorUnit.h"
-#include "CalcUnit.h"
+//#include "CalcUnit.h"
+#include "Calc_Func_DLL.h"
+#define CALCFUNCDLL_API __declspec(dllexport)
 #include <SimpleAmqpClient/SimpleAmqpClient.h>
 #pragma comment(lib,"libmysql.lib")
 
@@ -457,9 +461,17 @@ std::string Calculate_To_DataShow(std::string& res_str, const OperatorUnit& op, 
 }
 
 int main() {
+	std::string inifile = "Config.ini";
+	std::string filename = "";
+	INIReader reader(inifile);
+	if (reader.ParseError() != 0) {
+		std::cout << "Can't load '" + inifile + "'" << std::endl;
+	}
+
 
 	// 读取CSV 获取Para_Method
-	std::ifstream fin("t_tm_translate.csv", std::ios::in);
+	filename = reader.Get("File", "Translate_Method", "");
+	std::ifstream fin(filename, std::ios::in);
 	std::string line_str, file_str;
 	while (std::getline(fin, line_str)) {
 		file_str += line_str;
@@ -471,7 +483,8 @@ int main() {
 	fin.close();
 
 	// 读取CSV 获取卫星信息
-	fin.open("卫星.csv", std::ios::in);
+	filename = reader.Get("File", "Star_Num", "");
+	fin.open(filename, std::ios::in);
 	while (std::getline(fin, line_str)) {
 		file_str += line_str;
 	}
@@ -480,11 +493,11 @@ int main() {
 	Build_Star_Map(Star_Map, file_str);
 
 	// 连接MySQL
-	std::string host = "localhost";
-	std::string user = "root";
-	std::string password = "0822";
-	std::string dbname = "workspace";
-	int port = 3306;
+	std::string host = reader.Get("Database", "Host", "localhost");
+	std::string user = reader.Get("Database", "User", "root");
+	std::string password = reader.Get("Database", "Password", "");
+	std::string dbname = reader.Get("Database", "DBName", "");
+	int port = reader.GetInteger("Database", "Port", 3306);
 	DatabaseUnit DB_Para(host, user, password, dbname, port);
 	if (!DB_Para.Connect_Database()) {
 		return 0;
@@ -509,7 +522,8 @@ int main() {
 
 	// 读取&存储XML解析文件
 	tinyxml2::XMLDocument TelProcess;
-	TelProcess.LoadFile("TelemetryProcess.xml");
+	filename = reader.Get("File", "Param_Link", "");
+	TelProcess.LoadFile(filename.c_str());
 	tinyxml2::XMLElement* root = TelProcess.RootElement();
 
 	std::map<std::string, std::string> FormatDesc_Map;
@@ -544,13 +558,17 @@ int main() {
 	std::string pkg_code;
 	std::string pkg_res;
 	std::string pkg_show;
-	std::string queue_name = "test_queue";
+	std::string queue_name = reader.Get("RabbitMQ", "Queuename", "");
 	//std::string star_val;
 	Package now;
 	OperatorUnit tmp_op;
 	std::vector <std::pair<int, std::string>> Para_Code;
-
-	Channel::ptr_t channel = Channel::Create("localhost", 5672, "test", "123456", "/");
+	host = reader.Get("RabbitMQ", "Host", "localhost");
+	port = reader.GetInteger("RabbitMQ", "Port", 5672);
+	user = reader.Get("RabbitMQ", "Username", "");
+	password = reader.Get("RabbitMQ", "Password", "");
+	std::string vhost = reader.Get("RabbitMQ", "Vhost", "/");
+	Channel::ptr_t channel = Channel::Create(host, port, user, password, vhost);
 	channel->DeclareQueue(queue_name, false, true, false, false);
 	std::string consumer_tag = channel->BasicConsume(queue_name);
 

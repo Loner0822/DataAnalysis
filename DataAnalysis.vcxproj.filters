@@ -33,9 +33,6 @@
     <ClCompile Include="OperatorUnit.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="CalcUnit.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Package.h">
@@ -50,11 +47,16 @@
     <ClInclude Include="DatabaseUnit.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="CalcUnit.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="OperatorUnit.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="IniReader.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="DataAnalysis.rc">
+      <Filter>资源文件</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

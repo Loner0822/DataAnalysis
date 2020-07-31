@@ -76,13 +76,12 @@ bool DatabaseUnit::Query_Database(std::string sql_str) {
 
 bool DatabaseUnit::Insert_Database(std::string sql_str) {
 	//sql_str = GbkToUtf8(sql_str.c_str());
-	if (mysql_query(&Mysql, sql_str.c_str()))        //执行SQL语句  
-	{
+	//执行SQL语句  
+	if (mysql_query(&Mysql, sql_str.c_str())) {
 		std::cout << "Query Failed:" << mysql_error(&Mysql) << std::endl;
 		return false;
 	}
-	else
-	{
+	else {
 		//std::cout << "Insert Success" << std::endl;
 		return true;
 	}
@@ -90,13 +89,12 @@ bool DatabaseUnit::Insert_Database(std::string sql_str) {
 
 bool DatabaseUnit::Delete_Database(std::string sql_str) {
 	//sql_str = GbkToUtf8(sql_str.c_str());
-	if (mysql_query(&Mysql, sql_str.c_str()))        //执行SQL语句  
-	{
+	//执行SQL语句  
+	if (mysql_query(&Mysql, sql_str.c_str())) {
 		std::cout << "Query Failed:" << mysql_error(&Mysql) << std::endl;
 		return false;
 	}
-	else
-	{
+	else {
 		//std::cout << "Delete Success" << std::endl;
 		return true;
 	}

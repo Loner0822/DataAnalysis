@@ -22,7 +22,7 @@
 
 using namespace AmqpClient;
 
-const int MaxByte = 0xff;
+const int MaxByte = 0x12f;
 double CONST_5V_VOLT;
 
 // 读取2进制文件(压缩成字符类型)
@@ -218,7 +218,7 @@ void Build_Para_Method_Map(std::map<std::string, std::string>& res_map, std::str
 		}
 	}
 	std::vector<std::string> para_index_method = My_Split(str, "\"");
-	for (int i = 0; i < para_index_method.size(); i += 2) {
+	for (int i = 0; i < (int)para_index_method.size(); i += 2) {
 		res_map[para_index_method[i]] = para_index_method[i + 1];
 	}
 }
@@ -245,7 +245,7 @@ void Build_Star_Map(std::map<std::string, std::string>& res_map, std::string& st
 		}
 	}
 	std::vector<std::string> star_msg = My_Split(str, "\"");
-	for (int i = 0; i < star_msg.size(); i += 2) {
+	for (int i = 0; i < (int)star_msg.size(); i += 2) {
 		res_map[star_msg[i]] = star_msg[i + 1];
 	}
 }
@@ -256,7 +256,7 @@ std::vector<double> Const_Str_To_Vector(std::string str) {
 	std::vector<std::string> res_str;
 	res_str = My_Split(str, ",");
 	double tmp;
-	for (int i = 0; i < res_str.size(); ++i) {
+	for (int i = 0; i < (int)res_str.size(); ++i) {
 		tmp = atof(res_str[i].c_str());
 		res.push_back(tmp);
 	}
@@ -354,7 +354,7 @@ std::string VirtualBand_To_DataString(std::string virtual_band, const Package& p
 	}
 	std::string pkg_data, res_str;
 	pkg_data = pkg.Package_Leader + pkg.Package_Sub_Leader + pkg.Package_Data;
-	for (int i = 0; i < res.size(); ++i) {
+	for (int i = 0; i < (int)res.size(); ++i) {
 		res_str += pkg_data.substr((res[i] - 1) * 2, 2);
 	}
 	return res_str;
@@ -363,8 +363,7 @@ std::string VirtualBand_To_DataString(std::string virtual_band, const Package& p
 // 计算结果
 std::string Calculate_To_DataString(const std::string& input, std::vector<CalcUnit>& calc_list) {
 	double res = std::stoi(input, nullptr, 16);
-	int res_int;
-	for (int i = 0; i < calc_list.size(); ++i) {
+	for (int i = 0; i < (int)calc_list.size(); ++i) {
 		if (calc_list[i].Calc_Id == 50 || calc_list[i].Calc_Id == 51) {
 			calc_list[i].Const_Nums.push_back(CONST_5V_VOLT);
 		}
@@ -386,7 +385,7 @@ std::string Calculate_To_DataShow(std::string& res_str, const OperatorUnit& op, 
 	}
 	std::ostringstream num_out;
 	double res_double = std::stof(res_str);
-	int res_int = int(res_double + 0.5), days, seconds;
+	int res_int = int(res_double + 0.5);
 	// 时间 2000.1.1 12:00 开始计时 10957 * 3600 * 24 + 12 * 3600 为 1970.1.1 00:00 到 2000.1.1 00:00 秒数
 	time_t t = res_int + 10957 * 3600 * 24 + 12 * 3600;
 	switch (type_int)
@@ -395,7 +394,7 @@ std::string Calculate_To_DataShow(std::string& res_str, const OperatorUnit& op, 
 		res_str = std::to_string(res_int);
 		if (op.Para_Method != "") {
 			vec_method = My_Split(op.Para_Method, ":;");
-			for (int i = 0; i < vec_method.size(); i += 2) {
+			for (int i = 0; i < (int)vec_method.size(); i += 2) {
 				if (std::stoi(vec_method[i]) == res_int) {
 					return vec_method[i + 1];
 				}
@@ -414,7 +413,7 @@ std::string Calculate_To_DataShow(std::string& res_str, const OperatorUnit& op, 
 			vec_digit.push_back(res_int & 15);
 			res_int >>= 4;
 		}
-		for (int i = 0; i < vec_digit.size(); ++i) {
+		for (int i = 0; i < (int)vec_digit.size(); ++i) {
 			if (0 <= vec_digit[i] && vec_digit[i] <= 9) {
 				show_str = std::to_string(vec_digit[i]) + show_str;
 			}
@@ -431,7 +430,7 @@ std::string Calculate_To_DataShow(std::string& res_str, const OperatorUnit& op, 
 			vec_digit.push_back(res_int & 1);
 			res_int >>= 1;
 		}
-		for (int i = 0; i < vec_digit.size(); ++i) {
+		for (int i = 0; i < (int)vec_digit.size(); ++i) {
 			show_str = std::to_string(vec_digit[i]) + show_str;
 		}
 		while (show_str.size() < code.size() * 4)
@@ -602,7 +601,7 @@ int main() {
 				Para_Code = Format_Map[Format_Code];
 			else
 				continue;
-			for (int k = 0; k < Para_Code.size(); ++k) {
+			for (int k = 0; k < (int)Para_Code.size(); ++k) {
 				para_idx = std::to_string(Para_Code[k].first);
 				tmp_op = Para_Data[para_idx];
 				now_time = Get_Now_Time_String();

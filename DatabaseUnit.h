@@ -1,4 +1,6 @@
-﻿#include <mysql.h>
+﻿#pragma once
+#define WIN32_LEAN_AND_MEAN 
+#include <mysql.h>
 #include <string>
 
 class DatabaseUnit {

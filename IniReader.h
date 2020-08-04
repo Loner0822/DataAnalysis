@@ -1,4 +1,5 @@
-﻿// Read an INI file into easy-to-access name/value pairs.
+﻿#pragma once
+// Read an INI file into easy-to-access name/value pairs.
 
 // inih and INIReader are released under the New BSD license (see LICENSE.txt).
 // Go to the project home page for more info:
@@ -189,7 +190,7 @@ inline int ini_parse_stream(ini_reader reader, void* stream, ini_handler handler
 	line = (char*)malloc(INI_MAX_LINE);
 	if (!line) {
 		return -2;
-	}
+}
 #endif
 
 	/* Scan through stream line by line */

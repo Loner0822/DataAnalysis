@@ -14,11 +14,12 @@
 #include "IniReader.h" 
 #include "DatabaseUnit.h"
 #include "OperatorUnit.h"
-//#include "CalcUnit.h"
+#include "WebSocketpp.h"
 #include "Calc_Func_DLL.h"
 #define CALCFUNCDLL_API __declspec(dllexport)
+
 #include <SimpleAmqpClient/SimpleAmqpClient.h>
-#pragma comment(lib,"libmysql.lib")
+
 
 using namespace AmqpClient;
 
@@ -575,11 +576,19 @@ int main() {
 	std::string now_date = Get_Now_Date_String();
 	std::string table_name = "analysis_result_S_" + now_date;
 
+	// websocket
+	websocket_endpoint endpoint;
+	std::string wsUrl = reader.Get("WebSocket", "Url", "ws://localhost");
+	int ws_id = endpoint.connect(wsUrl);
+	connection_metadata::ptr metedata = endpoint.get_metadata(ws_id);
+	std::string send_msg;
+
 	while (1) {
 		Envelope::ptr_t envelope = channel->BasicConsumeMessage(consumer_tag);
 		Frame_String = envelope->Message()->Body();
 		if (Frame_String == "exit")
 			break;
+
 		Frame_String = Bin_To_Hex(Frame_String);
 		Frame_Data = Frame(Frame_String);
 		star_num = Frame_Data.Frame_Leader.substr(0, 3);
@@ -622,6 +631,8 @@ int main() {
 				str_sql += pkg_res + "', '";
 				str_sql += pkg_show + "');";
 				//std::cout << str_sql << std::endl;
+				send_msg = str_sql;
+				endpoint.send(ws_id, send_msg);
 				DB_Para.Insert_Database(str_sql);
 			}
 		}

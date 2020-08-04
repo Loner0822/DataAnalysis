@@ -95,7 +95,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Program Files %28x86%29\MySQL\MySQL Server 5.7\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>C:\Program Files (x86)\MySQL\MySQL Server 5.7\lib\libmysql.lib;SimpleAmqpClient.2.lib;rabbitmq.4.lib;libboost_thread-vc142-mt-gd-x32-1_73.lib;libboost_date_time-vc142-mt-gd-x32-1_73.lib;CalcFuncDLL.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>C:\Program Files (x86)\MySQL\MySQL Server 5.7\lib\libmysql.lib;SimpleAmqpClient.2.lib;rabbitmq.4.lib;libboost_thread-vc142-mt-gd-x32-1_73.lib;libboost_date_time-vc142-mt-gd-x32-1_73.lib;CalcFuncDLL.lib;libboost_regex-vc142-mt-gd-x32-1_73.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -152,6 +152,7 @@
     <ClCompile Include="OperatorUnit.cpp" />
     <ClCompile Include="Package.cpp" />
     <ClCompile Include="tinyxml2.cpp" />
+    <ClCompile Include="WebSocketpp.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DatabaseUnit.h" />
@@ -160,6 +161,7 @@
     <ClInclude Include="OperatorUnit.h" />
     <ClInclude Include="Package.h" />
     <ClInclude Include="tinyxml2.h" />
+    <ClInclude Include="WebSocketpp.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="DataAnalysis.rc" />

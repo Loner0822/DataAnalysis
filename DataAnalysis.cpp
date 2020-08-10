@@ -15,8 +15,10 @@
 #include "DatabaseUnit.h"
 #include "OperatorUnit.h"
 #include "WebSocketpp.h"
-#include "Calc_Func_DLL.h"
-#define CALCFUNCDLL_API __declspec(dllexport)
+
+#include "CalcUnit.h"
+//#include "Calc_Func_DLL.h"
+//#define CALCFUNCDLL_API __declspec(dllexport)
 
 #include <SimpleAmqpClient/SimpleAmqpClient.h>
 
@@ -271,9 +273,14 @@ void Build_XML_FormatDesc_Map(std::map<std::string, std::string>& res_map, tinyx
 	for (item = surface->FirstChildElement(); item != NULL; item = item->NextSiblingElement()) {
 		ID = item->FindAttribute("id")->Value();
 		Condition = item->FindAttribute("condition")->Value();
-		Condition = Condition.substr(Condition.length() - 3, 2);
-		if (Check_Is_Hex(Condition) && res_map.count(Condition) == 0) {
-			res_map[Condition] = ID;
+		if (Condition == "1==1") {
+			res_map["1"] = ID;
+		}
+		else {
+			Condition = Condition.substr(Condition.length() - 3, 2);
+			if (Check_Is_Hex(Condition) && res_map.count(Condition) == 0) {
+				res_map[Condition] = ID;
+			}
 		}
 	}
 }
@@ -321,7 +328,7 @@ void Build_XML_Para_Calc_Map(std::map<std::string, std::vector<CalcUnit>>& res_m
 }
 
 // VirtualBand转换为数据串
-std::string VirtualBand_To_DataString(std::string virtual_band, const Package& pkg) {
+std::string VirtualBand_To_DataString(std::string virtual_band, const std::string& pkg_data) {
 	std::vector<int> res;
 	res.clear();
 	int tmp, num1, num2;
@@ -353,17 +360,29 @@ std::string VirtualBand_To_DataString(std::string virtual_band, const Package& p
 			num1 = num1 * 10 + virtual_band[tmp] - '0', ++tmp;
 		res.push_back(num1);
 	}
-	std::string pkg_data, res_str;
-	pkg_data = pkg.Package_Leader + pkg.Package_Sub_Leader + pkg.Package_Data;
+	std::string res_str;
 	for (int i = 0; i < (int)res.size(); ++i) {
 		res_str += pkg_data.substr((res[i] - 1) * 2, 2);
 	}
 	return res_str;
 }
 
+double Hex_To_Double(const std::string& str) {
+	double res = 0.0;
+	for (int i = 0; i < str.size(); ++i) {
+		if (str[i] >= '0' && str[i] <= '9') {
+			res = res * 16 + str[i] - '0';
+		}
+		else if (str[i] >= 'A' && str[i] <= 'F') {
+			res = res * 16 + str[i] - 'A' + 10;
+		}
+	}
+	return res;
+}
+
 // 计算结果
 std::string Calculate_To_DataString(const std::string& input, std::vector<CalcUnit>& calc_list) {
-	double res = std::stoi(input, nullptr, 16);
+	double res = Hex_To_Double(input);
 	for (int i = 0; i < (int)calc_list.size(); ++i) {
 		if (calc_list[i].Calc_Id == 50 || calc_list[i].Calc_Id == 51) {
 			calc_list[i].Const_Nums.push_back(CONST_5V_VOLT);
@@ -375,6 +394,7 @@ std::string Calculate_To_DataString(const std::string& input, std::vector<CalcUn
 
 // 处理显示结果
 std::string Calculate_To_DataShow(std::string& res_str, const OperatorUnit& op, const std::string& code) {
+
 	std::string show_str = "";
 	std::vector<std::string> vec_type = My_Split(op.Type, ",");
 	std::vector<std::string> vec_method;
@@ -384,9 +404,12 @@ std::string Calculate_To_DataShow(std::string& res_str, const OperatorUnit& op, 
 	if (vec_type.size() > 1) {
 		num_zero = std::stoi(vec_type[1]);
 	}
+	if (code.size() > 15) {
+		return code;
+	}
 	std::ostringstream num_out;
-	double res_double = std::stof(res_str);
-	int res_int = int(res_double + 0.5);
+	double res_double = std::stod(res_str);
+	long long res_int = long long(res_double + 0.5);
 	// 时间 2000.1.1 12:00 开始计时 10957 * 3600 * 24 + 12 * 3600 为 1970.1.1 00:00 到 2000.1.1 00:00 秒数
 	time_t t = res_int + 10957 * 3600 * 24 + 12 * 3600;
 	switch (type_int)
@@ -558,8 +581,8 @@ int main() {
 	std::string pkg_code;
 	std::string pkg_res;
 	std::string pkg_show;
+	std::string pkg_data;
 	std::string queue_name = reader.Get("RabbitMQ", "Queuename", "");
-	//std::string star_val;
 	Package now;
 	OperatorUnit tmp_op;
 	std::vector <std::pair<int, std::string>> Para_Code;
@@ -602,6 +625,43 @@ int main() {
 		str_sql = "create table if not exists " + table_name + "_" + star_num + " like analysis_result_S";
 		DB_Para.CreateTable_Database(str_sql);
 
+		Format_Code = FormatDesc_Map["1"];
+		Para_Code = Format_Map[Format_Code];
+		for (int k = 0; k < (int)Para_Code.size(); ++k) {
+			para_idx = std::to_string(Para_Code[k].first);
+			tmp_op = Para_Data[para_idx];
+			now_time = Get_Now_Time_String();
+			pkg_id = tmp_op.Sys_Name;
+			pkg_data = Frame_Data.Sync_Word + Frame_Data.Frame_Leader + Frame_Data.Frame_Sub_Leader + Frame_Data.Control_Field;
+			pkg_code = VirtualBand_To_DataString(Para_Code[k].second, pkg_data);
+			pkg_res = Calculate_To_DataString(pkg_code, Para_Calc_Map[para_idx]);
+			pkg_show = Calculate_To_DataShow(pkg_res, tmp_op, pkg_code);
+			str_sql = "insert into " + table_name + "_" + star_num + " (Create_time, Star_num, Package_id, Parameter_index, Parameter_name, Code, Value, Value_show) values ('";
+			str_sql += now_time + "', '";
+			str_sql += star_num + "', '";
+			str_sql += pkg_id + "', '";
+			str_sql += para_idx + "', '";
+			str_sql += tmp_op.Para_Name + "', '";
+			str_sql += pkg_code + "', '";
+			str_sql += pkg_res + "', '";
+			str_sql += pkg_show + "');";
+			send_msg = "{\"createtime\": \"" + now_time + "\",";
+			send_msg += "\"starnum\": \"" + star_num + "\",";
+			send_msg += "\"sysname\": \"" + tmp_op.Sys_Name + "\",";
+			send_msg += "\"paramindex\": \"" + para_idx + "\",";
+			send_msg += "\"paramcode\": \"" + tmp_op.Para_Code + "\",";
+			send_msg += "\"paramname\": \"" + tmp_op.Para_Name + "\",";
+			send_msg += "\"code\": \"" + pkg_code + "\",";
+			send_msg += "\"value\": \"" + pkg_res + "\",";
+			send_msg += "\"valueshow\": \"" + pkg_show + "\"}";
+			endpoint.send(ws_id, send_msg);
+
+			DB_Para.Insert_Database(str_sql);
+			std::cout << para_idx << std::endl;
+			Sleep(100);
+		}
+
+
 		for (int j = 0; j < 3; ++j) {
 			now = Frame_Data.Data[j];
 			Id_Code = now.Package_Leader.substr(2, 2);
@@ -615,7 +675,8 @@ int main() {
 				tmp_op = Para_Data[para_idx];
 				now_time = Get_Now_Time_String();
 				pkg_id = tmp_op.Sys_Name.substr(0, 4);
-				pkg_code = VirtualBand_To_DataString(Para_Code[k].second, now);
+				pkg_data = now.Package_Leader + now.Package_Sub_Leader + now.Package_Data;
+				pkg_code = VirtualBand_To_DataString(Para_Code[k].second, pkg_data);
 				pkg_res = Calculate_To_DataString(pkg_code, Para_Calc_Map[para_idx]);
 				pkg_show = Calculate_To_DataShow(pkg_res, tmp_op, pkg_code);
 				if (para_idx == "1101") {
@@ -630,12 +691,25 @@ int main() {
 				str_sql += pkg_code + "', '";
 				str_sql += pkg_res + "', '";
 				str_sql += pkg_show + "');";
-				//std::cout << str_sql << std::endl;
-				send_msg = str_sql;
+				send_msg = "{\"createtime\": \"" + now_time + "\",";
+				send_msg += "\"starnum\": \"" + star_num + "\",";
+				send_msg += "\"sysname\": \"" + tmp_op.Sys_Name + "\",";
+				send_msg += "\"paramindex\": \"" + para_idx + "\",";
+				send_msg += "\"paramcode\": \"" + tmp_op.Para_Code + "\",";
+				send_msg += "\"paramname\": \"" + tmp_op.Para_Name + "\",";
+				send_msg += "\"code\": \"" + pkg_code + "\",";
+				send_msg += "\"value\": \"" + pkg_res + "\",";
+				send_msg += "\"valueshow\": \"" + pkg_show + "\"}";
 				endpoint.send(ws_id, send_msg);
+
 				DB_Para.Insert_Database(str_sql);
+				std::cout << para_idx << std::endl;
+				Sleep(100);
 			}
 		}
 	}
+	int close_code = websocketpp::close::status::normal;
+	endpoint.close(ws_id, close_code, "exit");
+
 	return 0;
 }

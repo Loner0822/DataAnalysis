@@ -36,6 +36,9 @@
     <ClCompile Include="WebSocketpp.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="CalcUnit.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Package.h">
@@ -57,6 +60,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="WebSocketpp.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="CalcUnit.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

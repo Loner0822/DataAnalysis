@@ -16,15 +16,15 @@ Frame::Frame(const std::string& frame_string) {
 		std::cout << "Illegal (Frame)String" << std::endl;
 		return;
 	}*/
-	SID = frame_string.substr(13, 4);
-	DID = frame_string.substr(17, 4);
-	BID = frame_string.substr(21, 4);
-	Time_Scale = frame_string.substr(43, 4);
-	Sync_Word = frame_string.substr(0 + 47, 8);
-	Frame_Leader = frame_string.substr(8 + 47, 12);
-	Frame_Sub_Leader = frame_string.substr(20 + 47, 10);
+	SID = frame_string.substr(6, 8);
+	DID = frame_string.substr(14, 8);
+	BID = frame_string.substr(22, 8);
+	Time_Scale = frame_string.substr(66, 8);
+	Sync_Word = frame_string.substr(0 + 74, 8);
+	Frame_Leader = frame_string.substr(8 + 74, 12);
+	Frame_Sub_Leader = frame_string.substr(20 + 74, 10);
 	for (int i = 0; i < 3; ++i) {
-		std::string tmp = frame_string.substr(30 + 47 + i * (PackageLength + 2), PackageLength);
+		std::string tmp = frame_string.substr(30 + 74 + i * (PackageLength + 2), PackageLength);
 		Data[i] = Package(tmp);
 	}
 	//包间隔判断
